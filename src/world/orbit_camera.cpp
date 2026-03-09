@@ -152,7 +152,7 @@ Mat4 OrbitCamera::ViewMatrix() const
 
 Mat4 OrbitCamera::ProjectionMatrix(float aspect_ratio) const
 {
-    return PerspectiveMatrix(Radians(48.0f), aspect_ratio, 0.1f, 300.0f);
+    return PerspectiveMatrix(Radians(48.0f), aspect_ratio, 0.1f, 2400.0f);
 }
 
 float OrbitCamera::Distance() const

@@ -11,8 +11,8 @@ constexpr float kPi = 3.1415926535f;
 // Keep the dome well inside the camera far plane so the sky shader is always
 // visible instead of falling back to the black clear color.
 constexpr float kRadius = kWorldSkyDomeRadius;
-constexpr int kSegments = 32;
-constexpr int kRings = 16;
+constexpr int kSegments = 64;
+constexpr int kRings = 32;
 
 struct SkyVertex {
   float position[3];

@@ -3,7 +3,7 @@
 #include <array>
 #include <vector>
 
-constexpr float kWorldSkyDomeRadius = 180.0f;
+constexpr float kWorldSkyDomeRadius = 1200.0f;
 
 struct WorldVertex {
     float position[3];
