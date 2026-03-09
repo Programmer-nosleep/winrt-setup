@@ -53,6 +53,10 @@ enum NativeMenuCommand : unsigned int {
   kNativeMenuViewAxes = 1103,
   kNativeMenuViewSectionBox = 1104,
   kNativeMenuViewResetCamera = 1105,
+  kNativeMenuViewPerspective = 1106,
+  kNativeMenuViewPlan = 1107,
+  kNativeMenuViewFront = 1108,
+  kNativeMenuViewRight = 1109,
   kNativeMenuThemeSystem = 1201,
   kNativeMenuThemeLight = 1202,
   kNativeMenuThemeDark = 1203,
@@ -243,8 +247,6 @@ bool Application::Initialize() {
 
   main_scale_ = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
   const ui_style::UiMetrics ui_metrics = ui_style::BuildUiMetrics(main_scale_);
-  menu_bar_height_ = ui_metrics.menu_bar_height;
-  command_bar_height_ = ui_metrics.command_bar_height;
   status_bar_height_ = ui_metrics.status_bar_height;
   tray_width_ = ui_metrics.tray_width;
 
@@ -500,7 +502,6 @@ void Application::DrawMenuBar() {
   const ui_style::UiMetrics ui_metrics = ui_style::BuildUiMetrics(main_scale_);
   ImGuiIO &io = ImGui::GetIO();
   ImGuiStyle const &style = ImGui::GetStyle();
-  menu_bar_height_ = 0.0f;
   const workspace_ui::SelectionSnapshot selection_snapshot{
       .valid = last_marquee_valid_,
       .crossing = last_marquee_crossing_,
@@ -547,6 +548,11 @@ void Application::DrawMenuBar() {
             item.label.c_str(), item.active, ui_metrics.rail_button_size,
             main_scale_)) {
       active_workspace_index_ = static_cast<int>(index);
+      if (active_workspace_index_ == 0) {
+        camera_.SetHomeView();
+        perspective_index_ = 0;
+        SetActiveTool(ToolKind::Select, true);
+      }
       SetStatusMessage(fmt::format("{} workspace selected.", item.label));
     }
     ImGui::Dummy(ImVec2(0.0f, 4.0f * main_scale_));
@@ -588,13 +594,6 @@ void Application::DrawMenuBar() {
   workspace_ui::PushFontIfAvailable(ui_style::HeadingFont());
   ImGui::TextUnformatted(browser_model.project_name.c_str());
   workspace_ui::PopFontIfAvailable(ui_style::HeadingFont());
-  ImGui::SameLine();
-  ImGui::SetCursorPosX(ImGui::GetWindowWidth() - (46.0f * main_scale_));
-  if (workspace_ui::DrawIconGhostButton(
-          icon_cache_, "##sidebar-menu", "Menu", "Workspace menu",
-          ImVec2(28.0f * main_scale_, 28.0f * main_scale_), main_scale_)) {
-    SetStatusMessage("Workspace menu is not wired yet.");
-  }
   ImGui::Dummy(ImVec2(0.0f, 8.0f * main_scale_));
 
   if (workspace_ui::DrawIconGhostButton(
@@ -694,7 +693,6 @@ void Application::DrawMenuBar() {
 void Application::DrawCommandBar() {
   const ui_style::UiMetrics ui_metrics = ui_style::BuildUiMetrics(main_scale_);
   ImGuiStyle const &style = ImGui::GetStyle();
-  command_bar_height_ = 0.0f;
   if (viewport_rect_.w <= 0.0f || viewport_rect_.h <= 0.0f) {
     return;
   }
@@ -723,9 +721,8 @@ void Application::DrawCommandBar() {
   if (chrome_rect.w > toolbar_width) {
     toolbar_x += (chrome_rect.w - toolbar_width) * 0.5f;
   }
-  ImGui::SetNextWindowPos(
-      ImVec2(toolbar_x, chrome_rect.y + (4.0f * main_scale_)),
-      ImGuiCond_Always);
+  const float toolbar_y = 6.0f * main_scale_;
+  ImGui::SetNextWindowPos(ImVec2(toolbar_x, toolbar_y), ImGuiCond_Always);
   ImGui::SetNextWindowSize(
       ImVec2(toolbar_width, ui_metrics.top_toolbar_height),
       ImGuiCond_Always);
@@ -748,8 +745,7 @@ void Application::DrawCommandBar() {
   ImGui::SameLine();
   if (workspace_ui::DrawToolbarIconButton(
           icon_cache_, "##toolbar-view", "eyeglasses", "View",
-          perspective_index_ == 0,
-          ui_metrics.top_toolbar_button_size,
+          perspective_index_ == 0, ui_metrics.top_toolbar_button_size,
           main_scale_)) {
     camera_.SetIsometricView();
     perspective_index_ = 0;
@@ -758,8 +754,7 @@ void Application::DrawCommandBar() {
   ImGui::SameLine();
   if (workspace_ui::DrawToolbarIconButton(
           icon_cache_, "##toolbar-plan", "BackHand", "Plan",
-          perspective_index_ == 1,
-          ui_metrics.top_toolbar_button_size,
+          perspective_index_ == 1, ui_metrics.top_toolbar_button_size,
           main_scale_)) {
     camera_.SetTopView();
     perspective_index_ = 1;
@@ -817,11 +812,13 @@ void Application::DrawCommandBar() {
                                  : ImVec4(0.88f, 0.91f, 0.95f, 0.92f);
   const ImVec4 handle_stroke =
       resolved_dark_theme_
-          ? Mix(style.Colors[ImGuiCol_TextDisabled], style.Colors[ImGuiCol_Text], 0.28f)
-          : Mix(style.Colors[ImGuiCol_TextDisabled], style.Colors[ImGuiCol_Text], 0.45f);
-  const ImVec2 handle_min(toolbar_x + ((toolbar_width - (28.0f * main_scale_)) * 0.5f),
-                          chrome_rect.y + ui_metrics.top_toolbar_height +
-                              (4.0f * main_scale_));
+          ? Mix(style.Colors[ImGuiCol_TextDisabled],
+                style.Colors[ImGuiCol_Text], 0.28f)
+          : Mix(style.Colors[ImGuiCol_TextDisabled],
+                style.Colors[ImGuiCol_Text], 0.45f);
+  const ImVec2 handle_min(
+      toolbar_x + ((toolbar_width - (28.0f * main_scale_)) * 0.5f),
+      toolbar_y + ui_metrics.top_toolbar_height + (4.0f * main_scale_));
   const ImVec2 handle_max(handle_min.x + (28.0f * main_scale_),
                           handle_min.y + (16.0f * main_scale_));
   draw_list->AddRectFilled(handle_min, handle_max,
@@ -1367,7 +1364,7 @@ void Application::ResetLayout() {
   browser_sections_expanded_ = {true, true, true, true, true};
   CancelSelectionMarquee();
   last_marquee_valid_ = false;
-  camera_.SetIsometricView();
+  camera_.SetHomeView();
 }
 
 void Application::InstallNativeMenuBar() {
@@ -1407,6 +1404,11 @@ void Application::InstallNativeMenuBar() {
   AppendNativeMenuItem(view_menu, kNativeMenuViewGrid, L"&Grid");
   AppendNativeMenuItem(view_menu, kNativeMenuViewAxes, L"&Axes");
   AppendNativeMenuItem(view_menu, kNativeMenuViewSectionBox, L"&Section Box");
+  AppendMenuW(view_menu, MF_SEPARATOR, 0, nullptr);
+  AppendNativeMenuItem(view_menu, kNativeMenuViewPerspective, L"&Perspective");
+  AppendNativeMenuItem(view_menu, kNativeMenuViewPlan, L"&Plan");
+  AppendNativeMenuItem(view_menu, kNativeMenuViewFront, L"&Front");
+  AppendNativeMenuItem(view_menu, kNativeMenuViewRight, L"&Right");
   AppendMenuW(view_menu, MF_SEPARATOR, 0, nullptr);
   AppendNativeMenuItem(view_menu, kNativeMenuViewResetCamera, L"&Reset Camera");
 
@@ -1485,6 +1487,18 @@ void Application::UpdateNativeMenuBar() const {
     CheckMenuItem(view_menu, kNativeMenuViewSectionBox,
                   MF_BYCOMMAND |
                       (show_guide_cube_ ? MF_CHECKED : MF_UNCHECKED));
+
+    unsigned int checked_view_command = kNativeMenuViewPerspective;
+    if (perspective_index_ == 1) {
+      checked_view_command = kNativeMenuViewPlan;
+    } else if (perspective_index_ == 2) {
+      checked_view_command = kNativeMenuViewFront;
+    } else if (perspective_index_ == 3) {
+      checked_view_command = kNativeMenuViewRight;
+    }
+    CheckMenuRadioItem(view_menu, kNativeMenuViewPerspective,
+                       kNativeMenuViewRight, checked_view_command,
+                       MF_BYCOMMAND);
   }
 
   if (theme_menu != nullptr) {
@@ -1530,6 +1544,26 @@ bool Application::HandleNativeMenuCommand(unsigned int command_id) {
     show_guide_cube_ = !show_guide_cube_;
     SetStatusMessage(show_guide_cube_ ? "Section box enabled."
                                       : "Section box hidden.");
+    return true;
+  case kNativeMenuViewPerspective:
+    camera_.SetIsometricView();
+    perspective_index_ = 0;
+    SetStatusMessage("Perspective workspace view activated.");
+    return true;
+  case kNativeMenuViewPlan:
+    camera_.SetTopView();
+    perspective_index_ = 1;
+    SetStatusMessage("Plan workspace view activated.");
+    return true;
+  case kNativeMenuViewFront:
+    camera_.SetFrontView();
+    perspective_index_ = 2;
+    SetStatusMessage("Front view activated.");
+    return true;
+  case kNativeMenuViewRight:
+    camera_.SetRightView();
+    perspective_index_ = 3;
+    SetStatusMessage("Right view activated.");
     return true;
   case kNativeMenuViewResetCamera:
     camera_.Reset();

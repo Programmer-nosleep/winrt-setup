@@ -92,7 +92,8 @@ void WorldRenderer::Render(GlApi const &gl, OrbitCamera const &camera,
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_CULL_FACE);
 
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+  glClearColor(style.sky_top_color[0], style.sky_top_color[1],
+               style.sky_top_color[2], 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   const float aspect_ratio = static_cast<float>(viewport_pixels.w) /

@@ -77,8 +77,6 @@ private:
     bool perpendicular_snap_ = false;
     std::array<bool, 5> browser_sections_expanded_{true, true, true, true, true};
     Uint64 last_theme_sync_ticks_ = 0;
-    float menu_bar_height_ = 0.0f;
-    float command_bar_height_ = 0.0f;
     float status_bar_height_ = 0.0f;
     float tray_width_ = 0.0f;
     SDL_FRect viewport_rect_{};
