@@ -316,8 +316,8 @@ bool Application::Initialize() {
   ApplyThemeMode(theme_mode_, true);
   RefreshSnapshot();
   SetActiveTool(ToolKind::Select, true);
-  SetStatusMessage("Ready. Arch workspace shell active. F1 opens Help & System "
-                   "Information.");
+  active_workspace_index_ = 0;
+  SetStatusMessage("Home workspace active. F1 opens Help & System Information.");
   running_ = true;
   return true;
 }
@@ -351,7 +351,9 @@ void Application::ProcessEvent(SDL_Event const &event) {
 
   switch (event.type) {
   case SDL_EVENT_QUIT:
-    running_ = false;
+    if (ConfirmExit()) {
+      running_ = false;
+    }
     return;
   case SDL_EVENT_USER:
     if (event.user.data1 == this &&
@@ -361,7 +363,9 @@ void Application::ProcessEvent(SDL_Event const &event) {
     break;
   case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
     if (event.window.windowID == SDL_GetWindowID(window_)) {
-      running_ = false;
+      if (ConfirmExit()) {
+        running_ = false;
+      }
       return;
     }
     break;
@@ -1358,7 +1362,7 @@ void Application::ResetLayout() {
   show_axes_ = true;
   show_guide_cube_ = false;
   inspector_tab_ = 0;
-  active_workspace_index_ = 3;
+  active_workspace_index_ = 0;
   perspective_index_ = 0;
   browser_sections_expanded_ = {true, true, true, true, true};
   CancelSelectionMarquee();
@@ -1503,7 +1507,9 @@ void Application::UpdateNativeMenuBar() const {
 bool Application::HandleNativeMenuCommand(unsigned int command_id) {
   switch (command_id) {
   case kNativeMenuFileExit:
-    running_ = false;
+    if (ConfirmExit()) {
+      running_ = false;
+    }
     return true;
   case kNativeMenuViewInspector:
     inspector_visible_ = !inspector_visible_;
@@ -1628,6 +1634,22 @@ void Application::RefreshSnapshot() {
   snapshot_ = CaptureWinRtSnapshot();
   SetStatusMessage(
       fmt::format("System info refreshed at {}.", snapshot_.last_updated));
+}
+
+bool Application::ConfirmExit() {
+  HWND const hwnd = static_cast<HWND>(native_hwnd_);
+  const int result = MessageBoxW(
+      hwnd,
+      L"Exit WinRT Sketch World?\n\nAny current workspace changes in this "
+      L"session will be discarded.",
+      L"Exit WinRT Sketch World",
+      MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2 | MB_TASKMODAL);
+  if (result == IDYES) {
+    return true;
+  }
+
+  SetStatusMessage("Exit canceled.");
+  return false;
 }
 
 void Application::SetActiveTool(ToolKind tool, bool quiet) {

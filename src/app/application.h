@@ -43,6 +43,7 @@ private:
     void ApplyThemeMode(ThemeMode mode, bool quiet = false);
     void SyncThemeWithSystem();
     void RefreshSnapshot();
+    bool ConfirmExit();
     void SetActiveTool(ToolKind tool, bool quiet = false);
     void SetStatusMessage(std::string message);
 
@@ -65,7 +66,7 @@ private:
     bool resolved_dark_theme_ = false;
     ThemeMode theme_mode_ = ThemeMode::System;
     ToolKind active_tool_ = ToolKind::Select;
-    int active_workspace_index_ = 3;
+    int active_workspace_index_ = 0;
     int inspector_tab_ = 0;
     int perspective_index_ = 0;
     int units_index_ = 0;

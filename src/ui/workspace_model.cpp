@@ -7,6 +7,27 @@ namespace {
 
 constexpr const char *kProjectId = "arch-09f3-b2c1-winrt-shell";
 
+char const *WorkspaceLabel(int active_workspace_index) {
+  switch (active_workspace_index) {
+  case 0:
+    return "Home";
+  case 1:
+    return "Projects";
+  case 2:
+    return "Template";
+  case 3:
+    return "Design";
+  case 4:
+    return "Library";
+  case 5:
+    return "Material";
+  case 6:
+    return "Review";
+  default:
+    return "Home";
+  }
+}
+
 std::string SelectionLabel(SelectionSnapshot const &selection) {
   if (!selection.valid) {
     return "Selection set idle";
@@ -34,10 +55,10 @@ BrowserModel BuildBrowserModel(int active_workspace_index, ToolKind active_tool,
   (void)show_section_box;
   BrowserModel model;
   model.project_name = "Test";
-  model.project_role = "Views";
+  model.project_role = WorkspaceLabel(active_workspace_index);
   model.workspace_label = "Qreasee workspace shell";
   model.project_id = kProjectId;
-  model.session_title = "Views";
+  model.session_title = WorkspaceLabel(active_workspace_index);
   model.session_note = status_message;
 
   model.rail_items = {

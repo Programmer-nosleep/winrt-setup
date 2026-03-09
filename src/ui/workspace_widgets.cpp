@@ -203,14 +203,20 @@ bool DrawSquareIconButton(SvgIconCache& icons, char const* id,
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ImVec4 fill = active
         ? AccentFill(frame.hovered)
-        : WithAlpha(Mix(style.Colors[ImGuiCol_Button], style.Colors[ImGuiCol_WindowBg],
-                        frame.hovered ? 0.18f : 0.34f),
-                    frame.hovered ? 0.98f : 0.92f);
+        : (frame.hovered
+               ? WithAlpha(Mix(style.Colors[ImGuiCol_ButtonHovered],
+                               style.Colors[ImGuiCol_WindowBg], 0.58f),
+                           0.16f)
+               : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     ImVec4 border = active
-        ? WithAlpha(AccentEdgeColor(frame.hovered), 0.58f)
-        : WithAlpha(style.Colors[ImGuiCol_Border], frame.hovered ? 0.72f : 0.45f);
-    DrawFrame(draw_list, frame, fill, border, TileRadius(scale),
-              std::max(1.0f, 1.1f * scale));
+        ? WithAlpha(AccentEdgeColor(frame.hovered), 0.52f)
+        : (frame.hovered
+               ? WithAlpha(style.Colors[ImGuiCol_Border], 0.24f)
+               : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    if (fill.w > 0.0f || border.w > 0.0f) {
+        DrawFrame(draw_list, frame, fill, border, TileRadius(scale),
+                  std::max(1.0f, 1.1f * scale));
+    }
 
     IconTexture const icon =
         icons.Get(icon_name != nullptr ? icon_name : "", static_cast<int>(18.0f * scale));
@@ -264,14 +270,20 @@ bool DrawHorizontalButton(SvgIconCache& icons, char const* id, char const* icon_
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ImVec4 fill = active
         ? AccentFill(frame.hovered)
-        : WithAlpha(Mix(style.Colors[ImGuiCol_Button], style.Colors[ImGuiCol_WindowBg],
-                        frame.hovered ? 0.08f : 0.20f),
-                    frame.hovered ? 0.98f : 0.90f);
+        : (frame.hovered
+               ? WithAlpha(Mix(style.Colors[ImGuiCol_ButtonHovered],
+                               style.Colors[ImGuiCol_WindowBg], 0.60f),
+                           0.16f)
+               : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     ImVec4 border = active
-        ? WithAlpha(AccentEdgeColor(frame.hovered), 0.50f)
-        : WithAlpha(style.Colors[ImGuiCol_Border], frame.hovered ? 0.68f : 0.40f);
-    DrawFrame(draw_list, frame, fill, border, ButtonRadius(scale),
-              std::max(1.0f, 1.0f * scale));
+        ? WithAlpha(AccentEdgeColor(frame.hovered), 0.46f)
+        : (frame.hovered
+               ? WithAlpha(style.Colors[ImGuiCol_Border], 0.22f)
+               : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    if (fill.w > 0.0f || border.w > 0.0f) {
+        DrawFrame(draw_list, frame, fill, border, ButtonRadius(scale),
+                  std::max(1.0f, 1.0f * scale));
+    }
 
     const float left_padding = compact ? (8.0f * scale) : (10.0f * scale);
     const float icon_size = compact ? (13.0f * scale) : (15.0f * scale);
@@ -672,16 +684,13 @@ bool DrawBrowserItemRow(SvgIconCache& icons, BrowserItem const& item, float scal
         BeginButtonFrame("##item", ImVec2(width, 28.0f * scale));
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ImVec4 fill = item.selected
-        ? WithAlpha(Mix(style.Colors[ImGuiCol_HeaderActive],
-                        style.Colors[ImGuiCol_WindowBg], 0.72f), 0.96f)
-        : (frame.hovered
-               ? WithAlpha(Mix(style.Colors[ImGuiCol_ButtonHovered],
-                               style.Colors[ImGuiCol_WindowBg], 0.38f),
-                           0.44f)
-               : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-    ImVec4 border = item.selected
-        ? WithAlpha(style.Colors[ImGuiCol_Border], 0.18f)
+        ? WithAlpha(AccentFill(frame.hovered), 0.28f)
         : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+    ImVec4 border = item.selected
+        ? WithAlpha(AccentEdgeColor(frame.hovered), 0.60f)
+        : (frame.hovered
+               ? WithAlpha(style.Colors[ImGuiCol_Border], 0.18f)
+               : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     if (fill.w > 0.0f || border.w > 0.0f) {
         DrawFrame(draw_list, frame, fill, border, 6.0f * scale,
                   std::max(1.0f, 1.0f * scale));
